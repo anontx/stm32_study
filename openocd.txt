@@ -1,0 +1,9 @@
+server:
+openocd -f board/sparkcore.cfg
+
+client:
+1.halt
+2.poll
+3.flash erase_check 0
+4.stm32f1x mass_erase 0
+5.flash write_bank 0 ~/stm32_study/blink.bin 0
