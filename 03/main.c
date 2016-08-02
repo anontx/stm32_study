@@ -66,6 +66,12 @@ void HardFaultException(void)
 #define GPIOA_CRH         (*((volatile unsigned long *)(GPIOA_BASE + 0x04)))
 #define GPIOA_BSRR        (*((volatile unsigned long *)(GPIOA_BASE + 0x10)))
 
+void delay(void)
+{
+  unsigned int c = 0;
+  for(c = 0; c < 100000; c++);
+}
+
 int main(void)
 {
   char *body = "hello, world";
@@ -95,7 +101,8 @@ int main(void)
   //6.write date in USART_DR
   for(;*body;body++)
   {
+    USART1_SR &= ~(1 << 6);
     USART1_DR = (unsigned short)(0x1ff & *body);
-    while(USART1_SR & 0x40 == 0);
+    while(USART1_SR & 0x40 == 0); //bug
   }
 }
