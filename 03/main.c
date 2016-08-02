@@ -49,50 +49,53 @@ void HardFaultException(void)
 }
 
 //
-// main
+//main
 //
-#define RCC_APB2ENR (*((volatile unsigned long *)(0x40021000 + 0x18)))
+#define RCC_BASE          (0x40021000)
+#define RCC_APB2ENR       (*((volatile unsigned long *)(RCC_BASE + 0x18)))
 
-#define GPIOA_CRH   (*((volatile unsigned long *)(0x40010800 + 0x04)))
-#define GPIOA_BSRR  (*((volatile unsigned long *)(0x40010800 + 0x10)))
-#define GPIOB_CRH   (*((volatile unsigned long *)(0x40010C00 + 0x04)))
-#define GPIOB_BSRR  (*((volatile unsigned long *)(0x40010C00 + 0x10)))
+#define USART1_BASE       (0x40013800)
+#define USART1_SR         (*((volatile unsigned long *)(USART1_BASE)))
+#define USART1_DR         (*((volatile unsigned long *)(USART1_BASE + 0x04)))
+#define USART1_BRR        (*((volatile unsigned long *)(USART1_BASE + 0x08)))
+#define USART1_CR1        (*((volatile unsigned long *)(USART1_BASE + 0x0c)))
+#define USART1_CR2        (*((volatile unsigned long *)(USART1_BASE + 0x10)))
+#define USART1_CR3        (*((volatile unsigned long *)(USART1_BASE + 0x14)))
 
-#define USART1_SR   (*((volatile unsigned long *)(0x40013800)))
-#define USART1_DR   (*((volatile unsigned long *)(0x40013800 + 0x04)))
-#define USART1_BRR  (*((volatile unsigned long *)(0x40013800 + 0x08)))
-#define USART1_CR1  (*((volatile unsigned long *)(0x40013800 + 0x0c)))
-#define USART1_CR2  (*((volatile unsigned long *)(0x40013800 + 0x10)))
-#define USART1_CR3  (*((volatile unsigned long *)(0x40013800 + 0x14)))
-
-
-void delay(void)
-{
-  unsigned int c = 0;
-  for(c = 0; c < 100000; c++);
-}
+#define GPIOA_BASE        (0x40010800)
+#define GPIOA_CRH         (*((volatile unsigned long *)(GPIOA_BASE + 0x04)))
+#define GPIOA_BSRR        (*((volatile unsigned long *)(GPIOA_BASE + 0x10)))
 
 int main(void)
 {
-  char *body = "hello, world!";
+  char *body = "hello, world";
 
-  //usart1 & GPIOA RCC enable
+  //USART1 & GPIOA clock enable
   RCC_APB2ENR |= 0x4004;
-  GPIOA_CRH |= 0x4B0;
 
-  USART1_CR1 |= 0x2000; //enable USART & set word length
-  USART1_CR2 |= 0x0;    //default stop bits eq 8
-  //USART1_CR3 |= 0x80;
-  USART1_BRR |= 0x341;  //baud rate eq 9600
+  //set GPIO mode
+  GPIOA_CRH |= 0xb0;  //PA9
+  GPIOA_CRH |= 0x400; //PA10
 
-  USART1_CR1 |= 0x8;    //te
+  //1.enable USART_CR1 UE
+  USART1_CR1 |= 0x2000;
 
-  while(1)
+  //2.set USART_CR1 word length
+  //USART1_CR1 |= 0x0000;
+
+  //3.set USART_CR2 stop bits
+  //USART1_CR2 |= 0x0000;
+
+  //4.set USART_BRR baud rate
+  USART1_BRR = 0x341;
+
+  //5.set USART_CR1 TE
+  USART1_CR1 |= 0x8;
+
+  //6.write date in USART_DR
+  for(;*body;body++)
   {
-    for(;*body;body++)
-    {
-      USART1_DR = *body;
-      while(USART1_SR & 0x40 == 0); //check tc
-    }
+    USART1_DR = (unsigned short)(0x1ff & *body);
+    while(USART1_SR & 0x40 == 0);
   }
 }
